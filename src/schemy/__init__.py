@@ -1,7 +1,5 @@
 from __future__ import annotations
-from ast import alias
 import copy
-from operator import index
 import warnings
 
 class Schema(object):
