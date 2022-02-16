@@ -584,5 +584,3 @@ class Schema(object):
             raise Exception("It's not possible to define a alias for a field that does not exist in the schema.")
         self._alias[alias] = field
         return self
-
-    
