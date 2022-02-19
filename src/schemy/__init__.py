@@ -288,9 +288,7 @@ class Schema(object):
         , default=None
         , primary_key:bool=False
         , auto_increment:int=0
-        , optional:bool=False
-        # TODO remover a propriedade "null". "optional" entra no lugar.
-        , null:bool=None):
+        , optional:bool=False):
         if not name:
             name = self.gen_field_name()
         if ftype=='string':
@@ -339,21 +337,14 @@ class Schema(object):
         , auto_increment:int=0
         , optional:bool=False
         , col_ref:int=None
-        , pos:str='a'
-        # TODO remover a propriedade "null". "optional" entra no lugar.
-        , null:bool=None)->_Field:
-        if null is not None:
-            warnings.warn('The "null" property will be deprecated. Use "optional" instead.')
-            # optional = null
+        , pos:str='a')->_Field:
         f = self._gen_field(name=name
             , ftype=ftype
             , size=size
             , default=default
             , primary_key=primary_key
             , auto_increment=auto_increment
-            , optional=optional
-            # TODO remover a propriedade "null". "optional" entra no lugar.
-            , null=null)
+            , optional=optional)
         f.set_schema(self)
         self.append_field(field=f, col_ref=col_ref, pos=pos)
         if primary_key:
