@@ -1,6 +1,7 @@
 from __future__ import annotations
 import copy
 import warnings
+import re
 
 class Schema(object):
 
@@ -26,6 +27,8 @@ class Schema(object):
         Class to represent the 
         caracteristics of a field.
         """
+
+
         def __init__(self
             , name:str
             , ftype=str
@@ -101,10 +104,16 @@ class Schema(object):
             return self
 
         def set_name(self, name:str):
+            # valida a variavel
+            if type(name) is not str:
+                raise Exception("The field name must be a string.")
+            if not re.fullmatch(re.compile(r"[A-Za-z0-9]+"), name):
+                raise Exception("Fields must have alphanumeric names, containing only letters and numbers.")
+            if re.fullmatch(re.compile(r"[0-9]"), name):
+                raise Exception("Field names must always start with letters.")
             self._f['name'] = name
             return self
 
-        # TODO: caso o nome for nulo, fazer com que retorne um nome padrao
         def get_name(self, use_alias=True):
             """
             Gets the field name. If field has 
