@@ -290,7 +290,7 @@ class Schema(object):
         , auto_increment:int=0
         , optional:bool=False
         # TODO remover a propriedade "null". "optional" entra no lugar.
-        , null:bool=True):
+        , null:bool=None):
         if not name:
             name = self.gen_field_name()
         if ftype=='string':
