@@ -3,3 +3,4 @@ setup.cfg
 dist/
 src/schemy.egg-info/
 .DS_Store
+.python-version
