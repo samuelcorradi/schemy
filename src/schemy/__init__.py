@@ -289,6 +289,8 @@ class Schema(object):
         , primary_key:bool=False
         , auto_increment:int=0
         , optional:bool=False):
+        if ftype not in (int, str, float, bool, bytes):
+            raise Exception("Invalid type.")
         if not name:
             name = self.gen_field_name()
         f = self._Field(name=name
