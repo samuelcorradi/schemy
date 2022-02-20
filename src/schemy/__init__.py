@@ -283,7 +283,7 @@ class Schema(object):
 
     def _gen_field(self
         , name:str=None
-        , ftype:str='string'
+        , ftype=str
         , size:int=50
         , default=None
         , primary_key:bool=False
@@ -291,9 +291,6 @@ class Schema(object):
         , optional:bool=False):
         if not name:
             name = self.gen_field_name()
-        if ftype=='string':
-            warnings.warn('Use Python types to define the data type. Instead of using "string" use "str".')
-            ftype = str
         f = self._Field(name=name
             , ftype=ftype
             , size=size
