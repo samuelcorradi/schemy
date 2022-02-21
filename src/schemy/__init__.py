@@ -356,7 +356,7 @@ class Schema(object):
         ocupa na lista de campos do schema.
         """
         if type(name) is int:
-            if name>=len(self._schema):
+            if name>len(self._schema):
                 # print(str(self))
                 raise Exception("'%s' eh uma posicao alem da quantidade %s de campos no esquema do dataset." % (name, len(self._schema)))
             return name
@@ -364,8 +364,6 @@ class Schema(object):
             allpos = self.get_all_field_pos()
             pos = allpos.get(name, None)
             return pos
-            # if pos<1: raise Exception("'%s' eh um campo que nao existe do esquema do dataset." % name)
-            return pos+1
         else:
             raise Exception("Tipo nao identificado.")
 
