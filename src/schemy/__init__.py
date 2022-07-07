@@ -11,9 +11,7 @@ class Schema(object):
     def gen_field_name(field_pos:int):
         return Schema.default_name.format(field_pos)
 
-    def __init__(self
-        , name:str):
-        self._name = name
+    def __init__(self):
         self._schema = []
         self._pks = []
         self._alias = {}
@@ -145,13 +143,12 @@ class Schema(object):
         return len(self._schema)
 
     def to_sql(self
+        , tablename:str
         , cmd_prefix=''
         , cmd_sufix=''
         , max_limit=400
         , min_limit=6
-        , exclude_zero_lenght=True
-        # remove o tablename pq eh obrigatorio ter um nome
-        , tablename:str=None)->str:
+        , exclude_zero_lenght=True)->str:
         return self.sql_create_table(tablename=tablename
             , cmd_prefix=cmd_prefix
             , cmd_sufix=cmd_sufix
@@ -173,13 +170,12 @@ class Schema(object):
         return field.get_name()
 
     def sql_create_table(self
+        , tablename:str
         , cmd_prefix=''
         , cmd_sufix=''
         , max_limit=400
         , min_limit=6
-        , exclude_zero_lenght=True
-        # remove o tablename pq eh obrigatorio ter um nome
-        , tablename:str=None)->str:
+        , exclude_zero_lenght=True)->str:
         """
         Cria comando SQL para create table.
         """
@@ -234,23 +230,19 @@ class Schema(object):
             field_list.append(sql_field_schema(field=f
                 , max_limit=max_limit
                 , min_limit=min_limit) + "\n")
-        return cmd_prefix + "CREATE TABLE {} (\n\t  ".format(self._name) + "\t, ".join(field_list) + ")" + cmd_sufix
+        return cmd_prefix + "CREATE TABLE {} (\n\t  ".format(tablename) + "\t, ".join(field_list) + ")" + cmd_sufix
 
-    def copy(self, newname=None, deep:bool=False)->Schema:
+    def copy(self, deep:bool=False)->Schema:
         """
         Faz uma copia do objeto de Schema.
         Eh usado quando se faz copias
         de Datasets.
         """
         cp = copy.deepcopy(self) if deep else copy.copy(self)
-        if not newname:
-            newname=self._name + '_cp'
-        cp._name = newname
         return cp
 
     def __deepcopy__(self, mode):
-        cp = Schema(self._name)
-        # cp._name = self._name
+        cp = Schema()
         for f in self._schema:
             fcp = copy.deepcopy(f)
             fcp._schema = cp
@@ -265,7 +257,6 @@ class Schema(object):
 
     def __copy__(self):
         cp = object.__new__(type(self))
-        cp._name = self._name
         cp._schema = copy.copy(self._schema)
         cp._pks = copy.copy(self._pks)
         cp._alias = copy.copy(self._alias)
@@ -423,8 +414,6 @@ class Schema(object):
             self._schema[col_ref:col_ref] = [field]
         return self
 
-
-
     def pk(self
         , name:str=None
         , ftype=int
@@ -526,8 +515,7 @@ class Schema(object):
         Return a third schema who defines the
         relation.
         """
-        new_schema_name = "{}_{}".format(self._name, schema._name)
-        bridge = Schema(name=new_schema_name)
+        bridge = Schema()
         self.has(bridge, identified, source_fields, source_alias)
         schema.has(bridge, identified, target_fields, target_alias)
         return bridge
