@@ -9,7 +9,7 @@ if __name__ == "__main__":
     # chave primaria
     schema.pk('id')
 
-    nome = schema.add_field('nome')
+    nome = schema.add_field('nome', ftype=str)
     col1 = schema.Field()
     print(schema)
     print(schema.len())
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     print(teste_cp1.to_sql())
     print(teste_cp2.to_sql())
 
-    print(schema.get_field_pos('nome'))
+    print("Posicao do campo {}: {}".format('nome', schema.get_field_pos('nome')))
     print(schema.get_all_field_pos())
 
     # remove campo
