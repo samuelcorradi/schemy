@@ -107,9 +107,9 @@ class Schema(object):
             # valida a variavel
             if type(name) is not str:
                 raise Exception("The field name must be a string.")
-            if not re.fullmatch(re.compile(r"[A-Za-z0-9]+"), name):
-                raise Exception("Fields must have alphanumeric names, containing only letters and numbers.")
-            if re.fullmatch(re.compile(r"[0-9]"), name):
+            if not re.fullmatch(re.compile(r"[A-Za-z0-9\_]+"), name):
+                raise Exception("Fields must have alphanumeric names, containing only letters, numbers and the character '_'.")
+            if re.fullmatch(re.compile(r"[0-9\_]"), name):
                 raise Exception("Field names must always start with letters.")
             self._f['name'] = name
             return self
@@ -392,13 +392,15 @@ class Schema(object):
         return self
 
     def get_field(self, aliasname:str):
+        """
+        """
         flist = self.get_all_field_pos()
         fpos = flist.get(aliasname, 0)
-        if fpos:
-            return self._schema[fpos-1]
-
+        return self._schema[fpos-1] if fpos else None
 
     def get_all_field_pos(self)->dict:
+        """
+        """
         allpos = {}
         for i, f in enumerate(self._schema):
             allpos[f.get_name()]=i+1
