@@ -5,3 +5,4 @@ src/schemy.egg-info/
 src/schemy/__pycache__/
 .DS_Store
 .python-version
+tests/local_*
