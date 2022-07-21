@@ -26,14 +26,14 @@ class Schema(object):
         caracteristics of a field.
         """
 
-
         def __init__(self
             , name:str
             , ftype=str
             , size:int=50
             , default=None
             , auto_increment:int=0
-            , optional:bool=False):
+            , optional:bool=False
+            , format:str=None):
             self._schema:Schema = None
             # trata o campo default caso
             # seja obritatorio
@@ -43,7 +43,8 @@ class Schema(object):
             self._f = {'size':size
                 , 'default': default
                 , 'auto_increment':auto_increment
-                , 'optional':optional}
+                , 'optional':optional
+                , 'format':format}
             self.set_name(name)
             self.set_type(ftype)
 
