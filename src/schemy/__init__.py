@@ -1,7 +1,8 @@
 from __future__ import annotations
 import copy
-import warnings
 import re
+from datetime import date
+from datetime import datetime
 
 class Schema(object):
 
@@ -278,10 +279,10 @@ class Schema(object):
         , ftype=str
         , size:int=50
         , default=None
-        , primary_key:bool=False
         , auto_increment:int=0
-        , optional:bool=False):
-        if ftype not in (int, str, float, bool, bytes):
+        , optional:bool=False
+        , format:str=None):
+        if ftype not in (int, str, float, bool, bytes, datetime, date):
             raise Exception("Invalid type.")
         if not name:
             name = self.gen_field_name()
@@ -290,7 +291,8 @@ class Schema(object):
             , size=size
             , default=default
             , auto_increment=auto_increment
-            , optional=optional)
+            , optional=optional
+            , format=format)
         return f
 
     def Field(self
@@ -301,6 +303,7 @@ class Schema(object):
         , primary_key:bool=False
         , auto_increment:int=0
         , optional:bool=False
+        , format:str=None
         , col_ref:int=None
         , pos:str='a')->_Field:
         """
@@ -315,6 +318,7 @@ class Schema(object):
             , primary_key=primary_key
             , auto_increment=auto_increment
             , optional=optional
+            , format=format
             , col_ref=col_ref
             , pos=pos)
         return f
@@ -327,15 +331,16 @@ class Schema(object):
         , primary_key:bool=False
         , auto_increment:int=0
         , optional:bool=False
+        , format:str=None
         , col_ref:int=None
         , pos:str='a')->_Field:
         f = self._gen_field(name=name
             , ftype=ftype
             , size=size
             , default=default
-            , primary_key=primary_key
             , auto_increment=auto_increment
-            , optional=optional)
+            , optional=optional
+            , format=format)
         f.set_schema(self)
         self.append_field(field=f, col_ref=col_ref, pos=pos)
         if primary_key:
@@ -422,7 +427,8 @@ class Schema(object):
         , default=None
         , auto_increment:int=1
         , col_ref:int=None
-        , pos:str='a')->_Field:
+        , pos:str='a'
+        , format:str=None)->_Field:
         """
         Cria um campo do tipo primary key.
         """
@@ -434,7 +440,8 @@ class Schema(object):
             , col_ref=col_ref
             , pos=pos
             , primary_key=True
-            , optional=False)
+            , optional=False
+            , format=format)
         return f
 
     def get_names(self)->list:
@@ -452,7 +459,8 @@ class Schema(object):
         , ftype=str
         , size:int=50
         , col_ref:int=None
-        , pos:str='a')->_Field:
+        , pos:str='a'
+        , format:str=None)->_Field:
         """
         Cria um campo opcional.
         """
@@ -464,7 +472,8 @@ class Schema(object):
             , default=None
             , auto_increment=0
             , primary_key=False
-            , optional=True)
+            , optional=True
+            , format=format)
         
     def set_primary(self, field:_Field):
         """
