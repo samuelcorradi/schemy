@@ -75,7 +75,7 @@ class Schema(object):
             receber tipos especificos caso
             contrario retorna erro.
             """
-            if ftype not in (str, int, float, bool):
+            if ftype not in (str, int, float, bool, datetime, date):
                 raise Exception("Invalid type.")
             self._f['ftype'] = ftype
             return self
