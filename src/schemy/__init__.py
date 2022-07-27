@@ -3,6 +3,7 @@ import copy
 import re
 from datetime import date
 from datetime import datetime
+from schemy.exceptions import InvalidFieldName, MissingField, InvalidType, InvalidName
 
 class Schema(object):
 
@@ -34,7 +35,7 @@ class Schema(object):
             , default=None
             , auto_increment:int=0
             , optional:bool=False
-            , format:str=None):
+            , out_format:str=None):
             self._schema:Schema = None
             # trata o campo default caso
             # seja obritatorio
@@ -45,7 +46,7 @@ class Schema(object):
                 , 'default': default
                 , 'auto_increment':auto_increment
                 , 'optional':optional
-                , 'format':format}
+                , 'out_format':out_format}
             self.set_name(name)
             self.set_type(ftype)
 
@@ -76,7 +77,7 @@ class Schema(object):
             contrario retorna erro.
             """
             if ftype not in (str, int, float, bool, datetime, date):
-                raise Exception("Invalid type.")
+                raise InvalidType("Invalid type: {}".format(type(ftype)))
             self._f['ftype'] = ftype
             return self
 
@@ -104,13 +105,16 @@ class Schema(object):
             return self
 
         def set_name(self, name:str):
+            """
+            TODO: restringir ou nao o nome dos campos?
+            """
             # valida a variavel
             if type(name) is not str:
-                raise Exception("The field name must be a string.")
+                raise InvalidFieldName("The field name must be a string.")
             if not re.fullmatch(re.compile(r"[A-Za-z0-9\_]+"), name):
-                raise Exception("Fields must have alphanumeric names, containing only letters, numbers and the character '_'.")
+                pass # raise Exception("Fields must have alphanumeric names, containing only letters, numbers and the character '_'.")
             if re.fullmatch(re.compile(r"[0-9\_]"), name):
-                raise Exception("Field names must always start with letters.")
+                raise InvalidFieldName("Field names must always start with letters.")
             self._f['name'] = name
             return self
 
@@ -171,6 +175,30 @@ class Schema(object):
             return list(self._alias.keys())[i]
         return field.get_name()
 
+
+    def copy(self, deep:bool=False)->Schema:
+        """
+        Faz uma copia do objeto de Schema.
+        Eh usado quando se faz copias
+        de Datasets.
+        """
+        cp = copy.deepcopy(self) if deep else copy.copy(self)
+        return cp
+
+    def __deepcopy__(self, mode):
+        cp = Schema()
+        for f in self._schema:
+            fcp = copy.deepcopy(f)
+            fcp._schema = cp
+            cp.append_field(fcp)
+            if f in self._pks:
+                cp._pks.append(fcp)
+            # cp._alias = copy.copy(self._alias)
+        if self._alias:
+            for k, v in self._alias.items():
+                cp._alias[k] = v.copy()
+        return cp
+
     def sql_create_table(self
         , tablename:str
         , cmd_prefix=''
@@ -188,7 +216,7 @@ class Schema(object):
             elif ftype is int:
                 sql_type = 'INT'
             else:
-                raise Exception("Unknow type.")
+                raise InvalidType("Unknow type: {}".format(ftype))
             return sql_type 
 
         def sql_field_schema(field:self._Field
@@ -234,29 +262,6 @@ class Schema(object):
                 , min_limit=min_limit) + "\n")
         return cmd_prefix + "CREATE TABLE {} (\n\t  ".format(tablename) + "\t, ".join(field_list) + ")" + cmd_sufix
 
-    def copy(self, deep:bool=False)->Schema:
-        """
-        Faz uma copia do objeto de Schema.
-        Eh usado quando se faz copias
-        de Datasets.
-        """
-        cp = copy.deepcopy(self) if deep else copy.copy(self)
-        return cp
-
-    def __deepcopy__(self, mode):
-        cp = Schema()
-        for f in self._schema:
-            fcp = copy.deepcopy(f)
-            fcp._schema = cp
-            cp.append_field(fcp)
-            if f in self._pks:
-                cp._pks.append(fcp)
-            # cp._alias = copy.copy(self._alias)
-        if self._alias:
-            for k, v in self._alias.items():
-                cp._alias[k] = v.copy()
-        return cp
-
     def __copy__(self):
         cp = object.__new__(type(self))
         cp._schema = copy.copy(self._schema)
@@ -274,6 +279,21 @@ class Schema(object):
         """
         return Schema.gen_field_name(len(self._schema))
 
+    def __valid_type(self, ftype):
+        """
+        Valid if is a legal field type.
+        """
+        return ftype in (int, str, float, bool, bytes, datetime, date)
+
+    def __valid_name(self, name):
+        """
+        Valid the field name.
+        The name must be a string or a int value.
+        """
+        if name not in (int, str):
+            return False
+        return True
+
     def _gen_field(self
         , name:str=None
         , ftype=str
@@ -281,9 +301,9 @@ class Schema(object):
         , default=None
         , auto_increment:int=0
         , optional:bool=False
-        , format:str=None):
-        if ftype not in (int, str, float, bool, bytes, datetime, date):
-            raise Exception("Invalid type.")
+        , out_format:str=None):
+        if not self.__valid_type(ftype):
+            raise InvalidType("Invalid type: {}".format(type(ftype)))
         if not name:
             name = self.gen_field_name()
         f = self._Field(name=name
@@ -292,7 +312,7 @@ class Schema(object):
             , default=default
             , auto_increment=auto_increment
             , optional=optional
-            , format=format)
+            , out_format=out_format)
         return f
 
     def Field(self
@@ -303,7 +323,7 @@ class Schema(object):
         , primary_key:bool=False
         , auto_increment:int=0
         , optional:bool=False
-        , format:str=None
+        , out_format:str=None
         , col_ref:int=None
         , pos:str='a')->_Field:
         """
@@ -318,7 +338,7 @@ class Schema(object):
             , primary_key=primary_key
             , auto_increment=auto_increment
             , optional=optional
-            , format=format
+            , out_format=out_format
             , col_ref=col_ref
             , pos=pos)
         return f
@@ -331,7 +351,7 @@ class Schema(object):
         , primary_key:bool=False
         , auto_increment:int=0
         , optional:bool=False
-        , format:str=None
+        , out_format:str=None
         , col_ref:int=None
         , pos:str='a')->_Field:
         f = self._gen_field(name=name
@@ -340,7 +360,7 @@ class Schema(object):
             , default=default
             , auto_increment=auto_increment
             , optional=optional
-            , format=format)
+            , out_format=out_format)
         f.set_schema(self)
         self.append_field(field=f, col_ref=col_ref, pos=pos)
         if primary_key:
@@ -354,16 +374,15 @@ class Schema(object):
         """
         if type(name) is int:
             if name>len(self._schema):
-                # print(str(self))
-                raise Exception("'%s' eh uma posicao alem da quantidade %s de campos no esquema do dataset." % (name, len(self._schema)))
+                raise MissingField("Failed to find field at position: {}. You are trying to refer to a field at position '{}' while there are only '{}' fields defined in the schema.".format(name, name, len(self._schema)))
             return name
         elif type(name) is str:
             allpos = self.get_all_field_pos()
             pos = allpos.get(name, None)
             return pos
         else:
-            raise Exception("Tipo nao identificado.")
-
+            raise InvalidName("Invalid field name type: '{}'. A field name must be a string or an integer (that indicates the position in the schema).".format(type(name)))
+            
     def rm_field(self, name)->_Field:
         pos = self.get_field_pos(name)
         # if field exists
@@ -428,7 +447,7 @@ class Schema(object):
         , auto_increment:int=1
         , col_ref:int=None
         , pos:str='a'
-        , format:str=None)->_Field:
+        , out_format:str=None)->_Field:
         """
         Cria um campo do tipo primary key.
         """
@@ -441,7 +460,7 @@ class Schema(object):
             , pos=pos
             , primary_key=True
             , optional=False
-            , format=format)
+            , out_format=out_format)
         return f
 
     def get_names(self)->list:
@@ -460,7 +479,7 @@ class Schema(object):
         , size:int=50
         , col_ref:int=None
         , pos:str='a'
-        , format:str=None)->_Field:
+        , out_format:str=None)->_Field:
         """
         Cria um campo opcional.
         """
@@ -473,7 +492,7 @@ class Schema(object):
             , auto_increment=0
             , primary_key=False
             , optional=True
-            , format=format)
+            , out_format=out_format)
         
     def set_primary(self, field:_Field):
         """
@@ -483,7 +502,7 @@ class Schema(object):
         """
         # se o campo nao existe, retorna erro
         if not self.field_exists(field):
-            raise Exception("It's not possible to define as key for a schema if field that does not make part of it.")
+            raise MissingField("It's not possible to define as key for a schema if field that does not make part of it.")
         if field not in self._pks:
             self._pks.append(field)
         return self
@@ -578,6 +597,6 @@ class Schema(object):
         """
         # se o campo nao existe, retorna erro
         if not self.field_exists(field):
-            raise Exception("It's not possible to define a alias for a field that does not exist in the schema.")
+            raise MissingField("It's not possible to define a alias for a field that does not exist in the schema.")
         self._alias[alias] = field
         return self
