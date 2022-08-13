@@ -22,6 +22,78 @@ class Schema(object):
     def __str__(self):
         return self.to_str()
 
+    class SQL(object):
+
+        def __init__(self, schema:Schema):
+            self._schema = schema
+            """
+            Cria comando SQL para create table.
+            """
+
+        def sql_cast_type(self, ftype):
+            """
+            """
+            sql_type=''
+            if ftype is str:
+                sql_type = 'VARCHAR'
+            elif ftype is int:
+                sql_type = 'INT'
+            else:
+                raise InvalidType("Unknow type: {}".format(ftype))
+            return sql_type 
+
+        def sql_field_schema(self
+            , field:Schema._Field
+            , max_limit:int
+            , min_limit:int)->str:
+            """
+            Cria a parte de definicao dos campos.
+            """
+            fname = self._schema._get_field_alias_name(field)
+            ftype = self.sql_cast_type(field._f.get('ftype', str))
+            sql = "[{}] {}".format(fname, ftype)
+            if ftype!='DATETIME':
+                size = field._f.get('size', 0)
+                primary_key = field in self._schema._pks #._f.get('primary_key', False)
+                auto_increment = field._f.get('auto_increment', 0)
+                if not auto_increment:
+                    # if size<=0:
+                    if size<min_limit:
+                        size = min_limit
+                    sql += "({})".format('MAX' if size>max_limit else str(size))
+                if primary_key:
+                    sql += ' PRIMARY KEY'
+                # soh pode ser identidade se for um campo 
+                # original do schema que estah sendo 
+                # impresso, e nao uma fk
+                if field._schema==self and auto_increment:
+                    sql += ' IDENTITY(1,{})'.format(auto_increment)
+            if not field._f.get('optional', True):
+                sql += ' NOT NULL'
+            return sql
+
+        def create_table(self
+            , tablename:str
+            , cmd_prefix=''
+            , cmd_sufix=''
+            , max_limit=400
+            , min_limit=6
+            , exclude_zero_lenght=True)->str:
+                
+            field_list = []
+            for f in self._schema._schema:
+                size = f._f.get('size', 0)
+                ftype = self.sql_cast_type(f._f.get('ftype', str))
+                # field_schema = _default_schema(field_schema)
+                # ser for para excluir campos que tem tamanho 0
+                # e o tipo deste campo nao for DATETIME
+                if exclude_zero_lenght and (size<=0 and ftype!='DATETIME'):
+                    continue
+                field_list.append(self.sql_field_schema(field=f
+                    , max_limit=max_limit
+                    , min_limit=min_limit) + "\n")
+            return cmd_prefix + "CREATE TABLE {} (\n\t  ".format(tablename) + "\t, ".join(field_list) + ")" + cmd_sufix
+
     class _Field(object):
         """
         Class to represent the 
@@ -108,9 +180,12 @@ class Schema(object):
             """
             TODO: restringir ou nao o nome dos campos?
             """
+            print(name, type(name))
             # valida a variavel
             if type(name) is not str:
                 raise InvalidFieldName("The field name must be a string.")
+            if name.isdigit():
+                name = Schema.default_name.format(name)
             if not re.fullmatch(re.compile(r"[A-Za-z0-9\_]+"), name):
                 pass # raise Exception("Fields must have alphanumeric names, containing only letters, numbers and the character '_'.")
             if re.fullmatch(re.compile(r"[0-9\_]"), name):
@@ -148,19 +223,8 @@ class Schema(object):
         """
         return len(self._schema)
 
-    def to_sql(self
-        , tablename:str
-        , cmd_prefix=''
-        , cmd_sufix=''
-        , max_limit=400
-        , min_limit=6
-        , exclude_zero_lenght=True)->str:
-        return self.sql_create_table(tablename=tablename
-            , cmd_prefix=cmd_prefix
-            , cmd_sufix=cmd_sufix
-            , max_limit=max_limit
-            , min_limit=min_limit
-            , exclude_zero_lenght=exclude_zero_lenght)
+    def sql(self)->Schema.SQL:
+        return Schema.SQL(self)
 
     def __get_field_alias_pos(self, field:Schema._Field)->int:
         if self._alias:
@@ -169,7 +233,7 @@ class Schema(object):
                 i = v.index(field)
                 return i
         
-    def __get_field_alias_name(self, field:Schema._Field)->str:
+    def _get_field_alias_name(self, field:Schema._Field)->str:
         i = self.__get_field_alias_pos(field)
         if i:
             return list(self._alias.keys())[i]
@@ -198,69 +262,6 @@ class Schema(object):
             for k, v in self._alias.items():
                 cp._alias[k] = v.copy()
         return cp
-
-    def sql_create_table(self
-        , tablename:str
-        , cmd_prefix=''
-        , cmd_sufix=''
-        , max_limit=400
-        , min_limit=6
-        , exclude_zero_lenght=True)->str:
-        """
-        Cria comando SQL para create table.
-        """
-        def sql_cast_type(ftype):
-            sql_type=''
-            if ftype is str:
-                sql_type = 'VARCHAR'
-            elif ftype is int:
-                sql_type = 'INT'
-            else:
-                raise InvalidType("Unknow type: {}".format(ftype))
-            return sql_type 
-
-        def sql_field_schema(field:self._Field
-            , max_limit:int
-            , min_limit:int)->str:
-            """
-            Cria a parte de definicao dos campos.
-            """
-            fname = self.__get_field_alias_name(field)
-            ftype = sql_cast_type(field._f.get('ftype', str))
-            sql = "[{}] {}".format(fname, ftype)
-            if ftype!='DATETIME':
-                size = field._f.get('size', 0)
-                primary_key = field in self._pks #._f.get('primary_key', False)
-                auto_increment = field._f.get('auto_increment', 0)
-                if not auto_increment:
-                    # if size<=0:
-                    if size<min_limit:
-                        size = min_limit
-                    sql += "({})".format('MAX' if size>max_limit else str(size))
-                if primary_key:
-                    sql += ' PRIMARY KEY'
-                # soh pode ser identidade se for um campo 
-                # original do schema que estah sendo 
-                # impresso, e nao uma fk
-                if f._schema==self and auto_increment:
-                    sql += ' IDENTITY(1,{})'.format(auto_increment)
-            if not field._f.get('optional', True):
-                sql += ' NOT NULL'
-            return sql
-            
-        field_list = []
-        for f in self._schema:
-            size = f._f.get('size', 0)
-            ftype = sql_cast_type(f._f.get('ftype', str))
-            # field_schema = _default_schema(field_schema)
-            # ser for para excluir campos que tem tamanho 0
-            # e o tipo deste campo nao for DATETIME
-            if exclude_zero_lenght and (size<=0 and ftype!='DATETIME'):
-                continue
-            field_list.append(sql_field_schema(field=f
-                , max_limit=max_limit
-                , min_limit=min_limit) + "\n")
-        return cmd_prefix + "CREATE TABLE {} (\n\t  ".format(tablename) + "\t, ".join(field_list) + ")" + cmd_sufix
 
     def __copy__(self):
         cp = object.__new__(type(self))
