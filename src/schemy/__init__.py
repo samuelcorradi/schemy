@@ -258,9 +258,10 @@ class Schema(object):
             if f in self._pks:
                 cp._pks.append(fcp)
             # cp._alias = copy.copy(self._alias)
+        print(self._alias)
         if self._alias:
             for k, v in self._alias.items():
-                cp._alias[k] = v.copy()
+                cp._alias[k] = v
         return cp
 
     def __copy__(self):
