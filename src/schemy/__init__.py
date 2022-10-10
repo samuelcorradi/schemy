@@ -180,7 +180,6 @@ class Schema(object):
             """
             TODO: restringir ou nao o nome dos campos?
             """
-            print(name, type(name))
             # valida a variavel
             if type(name) is not str:
                 raise InvalidFieldName("The field name must be a string.")
@@ -239,7 +238,6 @@ class Schema(object):
             return list(self._alias.keys())[i]
         return field.get_name()
 
-
     def copy(self, deep:bool=False)->Schema:
         """
         Faz uma copia do objeto de Schema.
@@ -251,17 +249,17 @@ class Schema(object):
 
     def __deepcopy__(self, mode):
         cp = Schema()
+        alias_k = list(self._alias.keys()) if self._alias else [] 
+        alias_v = list(self._alias.values()) if self._alias else [] 
         for f in self._schema:
             fcp = copy.deepcopy(f)
             fcp._schema = cp
             cp.append_field(fcp)
             if f in self._pks:
                 cp._pks.append(fcp)
-            # cp._alias = copy.copy(self._alias)
-        print(self._alias)
-        if self._alias:
-            for k, v in self._alias.items():
-                cp._alias[k] = v
+            if f in alias_v:
+                i = alias_v.index(f)
+                cp._alias[alias_k[i]] = fcp
         return cp
 
     def __copy__(self):
