@@ -38,6 +38,8 @@ class Schema(object):
                 sql_type = 'VARCHAR'
             elif ftype is int:
                 sql_type = 'INT'
+            elif ftype is bool:
+                sql_type = 'BIT'
             else:
                 raise InvalidType("Unknow type: {}".format(ftype))
             return sql_type 
@@ -52,7 +54,7 @@ class Schema(object):
             fname = self._schema._get_field_alias_name(field)
             ftype = self.sql_cast_type(field._f.get('ftype', str))
             sql = "[{}] {}".format(fname, ftype)
-            if ftype!='DATETIME':
+            if ftype in ('INT', 'VARCHAR', 'CHAR', 'NVARCHAR'):
                 size = field._f.get('size', 0)
                 primary_key = field in self._schema._pks #._f.get('primary_key', False)
                 auto_increment = field._f.get('auto_increment', 0)
