@@ -1,8 +1,7 @@
 from __future__ import annotations
 import copy
 import re
-from datetime import date
-from datetime import datetime
+from datetime import date, datetime
 from schemy.exceptions import InvalidFieldName, MissingField, InvalidType, InvalidName
 
 class Schema(object):
@@ -40,6 +39,10 @@ class Schema(object):
                 sql_type = 'INT'
             elif ftype is bool:
                 sql_type = 'BIT'
+            elif ftype is datetime:
+                sql_type = 'DATETIME'
+            elif ftype is date:
+                sql_type = 'DATE'
             else:
                 raise InvalidType("Unknow type: {}".format(ftype))
             return sql_type 
