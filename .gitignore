@@ -1,6 +1,4 @@
 pyproject.toml
-/setup.cfg
-/setup.py
 dist/
 src/schemy.egg-info/
 src/schemy/__pycache__/
